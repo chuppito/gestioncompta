@@ -1,0 +1,105 @@
+{
+  "project_info": {
+    "project_number": "258205921546",
+    "project_id": "fidelite-pizzas",
+    "storage_bucket": "fidelite-pizzas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258205921546:android:12e56eba835e407a128af3",
+        "android_client_info": {
+          "package_name": "com.tomtom.fidelite"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9gayGwDPy-uavN8XN1jky50fZupFw5XM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258205921546:android:1d60ddf65e548e05128af3",
+        "android_client_info": {
+          "package_name": "com.tomtom.fidelite.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9gayGwDPy-uavN8XN1jky50fZupFw5XM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258205921546:android:d75012a8b4c116ca128af3",
+        "android_client_info": {
+          "package_name": "com.tomtom.gestioncompta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9gayGwDPy-uavN8XN1jky50fZupFw5XM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258205921546:android:e5ec07aa2cee2e85128af3",
+        "android_client_info": {
+          "package_name": "com.tomtom.la_casita_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9gayGwDPy-uavN8XN1jky50fZupFw5XM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258205921546:android:58df79e92395df10128af3",
+        "android_client_info": {
+          "package_name": "com.tomtom.lacasita"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9gayGwDPy-uavN8XN1jky50fZupFw5XM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
