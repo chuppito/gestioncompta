@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
 
       # --------------------------------------------------
-      # Recherche d'un ZIP à la racine du dépôt
+      # Recherche d'un ZIP à la racine
       # --------------------------------------------------
       - name: Detect ZIP
         id: zip
@@ -37,17 +37,8 @@ jobs:
           fi
 
       # --------------------------------------------------
-      # Sauvegarde du workflow actuel
-      # --------------------------------------------------
-      - name: Save current workflow
-        if: steps.zip.outputs.found == 'true'
-        shell: bash
-        run: |
-          mkdir -p /tmp/workflow-backup
-          cp .github/workflows/build.yml /tmp/workflow-backup/build.yml
-
-      # --------------------------------------------------
-      # Décompression du ZIP
+      # Décompression
+      # Le build.yml du ZIP est volontairement ignoré
       # --------------------------------------------------
       - name: Extract ZIP
         if: steps.zip.outputs.found == 'true'
@@ -56,16 +47,22 @@ jobs:
           ZIP="${{ steps.zip.outputs.file }}"
 
           echo "Décompression de $ZIP..."
-          unzip -o "$ZIP" -d .
 
-          echo "Restauration du workflow GitHub..."
-          cp /tmp/workflow-backup/build.yml .github/workflows/build.yml
+          unzip -o "$ZIP" -x ".github/workflows/build.yml"
 
           echo "Correction des permissions..."
-          find . -path './.git' -prune -o -exec chmod u+rwX {} +
+
+          find . \
+            -path './.git' -prune -o \
+            -exec chmod u+rwX {} +
 
           echo "Suppression de tous les ZIP..."
-          find . -type f -iname "*.zip" -not -path "./.git/*" -delete
+
+          find . \
+            -type f \
+            -iname "*.zip" \
+            -not -path "./.git/*" \
+            -delete
 
       # --------------------------------------------------
       # Commit et push des fichiers extraits
