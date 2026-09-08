@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
 
       # --------------------------------------------------
-      # Recherche d'un ZIP ajouté à la racine du dépôt
+      # Recherche d'un ZIP à la racine
       # --------------------------------------------------
       - name: Detect ZIP
         id: zip
@@ -46,8 +46,10 @@ jobs:
           ZIP="${{ steps.zip.outputs.file }}"
 
           echo "Décompression de $ZIP..."
-
           unzip -o "$ZIP" -d .
+
+          echo "Correction des permissions..."
+          find . -path './.git' -prune -o -exec chmod u+rwX {} +
 
           echo "Suppression du ZIP..."
           rm -f "$ZIP"
