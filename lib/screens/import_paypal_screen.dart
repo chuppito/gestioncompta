@@ -36,7 +36,7 @@ class _ImportPaypalScreenState extends State<ImportPaypalScreen> {
   List<PayPalRecu>? _recus;
   int _dejaImportes = 0;
   double _montantNouveaux = 0;
-  final Set<String> _nomsNonReconnus = {};
+  Set<String> _nomsNonReconnus = {};
 
   Future<void> _choisirFichier() async {
     setState(() {

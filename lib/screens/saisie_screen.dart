@@ -23,7 +23,6 @@ class Saisie extends StatefulWidget {
 class _SaisieState extends State<Saisie> {
   final _descCtrl = TextEditingController();
   final _montantCtrl = TextEditingController();
-  final _montantFocus = FocusNode();
 
   bool _depense = true;
   Frequence _frequence = Frequence.ponctuel;
@@ -48,7 +47,6 @@ class _SaisieState extends State<Saisie> {
   void dispose() {
     _descCtrl.dispose();
     _montantCtrl.dispose();
-    _montantFocus.dispose();
     super.dispose();
   }
 
@@ -75,44 +73,9 @@ class _SaisieState extends State<Saisie> {
                 border: OutlineInputBorder(),
               ),
             ),
-            if (!isEdit) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  ActionChip(
-                    avatar: const Icon(Icons.shopping_cart, size: 18, color: kPrimary),
-                    label: const Text("Achat METRO"),
-                    onPressed: () {
-                      setState(() {
-                        _descCtrl.text = "Achat METRO";
-                        _depense = true;
-                        _frequence = Frequence.ponctuel;
-                        _date = DateTime.now();
-                      });
-                      _montantFocus.requestFocus();
-                    },
-                  ),
-                  ActionChip(
-                    avatar: const Icon(Icons.account_balance, size: 18, color: kPrimary),
-                    label: const Text("Cotisations URSSAF"),
-                    onPressed: () {
-                      setState(() {
-                        _descCtrl.text = "Cotisations URSSAF";
-                        _depense = true;
-                        _frequence = Frequence.ponctuel;
-                        _date = DateTime.now();
-                      });
-                      _montantFocus.requestFocus();
-                    },
-                  ),
-                ],
-              ),
-            ],
             const SizedBox(height: 16),
             TextField(
               controller: _montantCtrl,
-              focusNode: _montantFocus,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: "Montant",
@@ -277,7 +240,7 @@ class _SaisieState extends State<Saisie> {
         op.depense = _depense;
         op.date = _date;
         op.f = _frequence;
-        s.syncOperationModifiee(op);
+        s.save();
         Navigator.pop(context);
       } else {
         final occurrenceDay = DateTime(
@@ -327,7 +290,8 @@ class _SaisieState extends State<Saisie> {
         pointages: [],
       );
 
-      s.addOperation(op);
+      s.ops.add(op);
+      s.save();
       Navigator.pop(context);
     }
   }
@@ -358,7 +322,8 @@ class _SaisieState extends State<Saisie> {
       newOp.togglePointage(newDay);
     }
 
-    s.addOperation(newOp);
+    s.ops.add(newOp);
+    s.save();
   }
 
   void _modifierDepuis(
@@ -384,6 +349,7 @@ class _SaisieState extends State<Saisie> {
 
     newOp.autoPointPast(today);
 
-    s.addOperation(newOp);
+    s.ops.add(newOp);
+    s.save();
   }
 }

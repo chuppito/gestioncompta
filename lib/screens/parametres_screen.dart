@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../theme.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -41,14 +40,6 @@ class _ParametresState extends State<Parametres> {
       body: ListView(
         children: [
           _sectionCompte(context),
-          const Divider(),
-          ListTile(
-            title: const Text("Resynchroniser toutes les ventes"),
-            subtitle: const Text(
-                "Récupère les ventes/opérations qui manqueraient en local (rare, peut prendre quelques secondes)"),
-            leading: const Icon(Icons.sync, color: kPrimary),
-            onTap: () => _resynchroniserTout(context, s),
-          ),
           const Divider(),
           ListTile(
             title: const Text("Pointer le passé"),
@@ -120,35 +111,14 @@ class _ParametresState extends State<Parametres> {
     }
 
     if (email != null) {
-      final uid = AuthService.currentUser?.uid ?? "";
-      return Column(
-        children: [
-          ListTile(
-            title: Text(email),
-            subtitle: const Text("Connecté — tes données sont synchronisées"),
-            leading: const Icon(Icons.cloud_done, color: Colors.green),
-            trailing: TextButton(
-              onPressed: () => _seDeconnecter(context),
-              child: const Text("Déconnexion"),
-            ),
-          ),
-          ListTile(
-            dense: true,
-            title: const Text("Identifiant compte (uid)", style: TextStyle(fontSize: 12)),
-            subtitle: Text(uid, style: const TextStyle(fontSize: 11)),
-            leading: const Icon(Icons.fingerprint, color: Colors.grey, size: 20),
-            trailing: IconButton(
-              icon: const Icon(Icons.copy, size: 18),
-              tooltip: "Copier (utile pour la synchro PayPal)",
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: uid));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("uid copié")),
-                );
-              },
-            ),
-          ),
-        ],
+      return ListTile(
+        title: Text(email),
+        subtitle: const Text("Connecté — tes données sont synchronisées"),
+        leading: const Icon(Icons.cloud_done, color: Colors.green),
+        trailing: TextButton(
+          onPressed: () => _seDeconnecter(context),
+          child: const Text("Déconnexion"),
+        ),
       );
     }
 
@@ -204,31 +174,6 @@ class _ParametresState extends State<Parametres> {
     });
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text("Solde mis à jour")));
-  }
-
-  // ===================== RESYNCHRONISATION MANUELLE =====================
-  Future<void> _resynchroniserTout(BuildContext context, Store s) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator(color: kPrimary)),
-    );
-
-    final resultat = await s.resynchroniserTout();
-
-    if (!context.mounted) return;
-    Navigator.pop(context); // ferme le rond de chargement
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          resultat.ventesMaj == 0 && resultat.opsMaj == 0
-              ? "Déjà à jour, rien à récupérer"
-              : "${resultat.ventesMaj} vente(s) et ${resultat.opsMaj} opération(s) mises à jour",
-        ),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   // ===================== AJUSTEMENT =====================

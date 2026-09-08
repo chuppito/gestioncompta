@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart';
 
 import '../services/store.dart';
 import '../services/app_config.dart';
@@ -9,7 +8,6 @@ import '../models/operation.dart';
 
 import 'saisie_screen.dart';
 import 'recap_screen.dart';
-import 'stats_screen.dart';
 import 'nouvelle_vente_screen.dart';
 import 'vente_detail_screen.dart';
 
@@ -76,16 +74,6 @@ class _HomeState extends State<Home> {
         backgroundColor: kPrimary,
         actions: [
           IconButton(
-            icon: const Icon(Icons.local_pizza),
-            tooltip: "Statistiques produits",
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const StatsScreen()),
-              );
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.bar_chart),
             tooltip: "Récapitulatif",
             onPressed: () {
@@ -134,28 +122,6 @@ class _HomeState extends State<Home> {
                   onPageChanged: (focusedDay) => _focusedDay = focusedDay,
                   eventLoader: (_) => [],
                   calendarBuilders: CalendarBuilders(
-                    headerTitleBuilder: (context, date) {
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () => _choisirMoisAnnee(context, date),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                DateFormat.yMMMM('fr_FR').format(date),
-                                style: const TextStyle(
-                                  fontSize: 17.0,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const Icon(Icons.arrow_drop_down),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
                     defaultBuilder: (context, day, focusedDay) {
                       return _buildDay(day, activeBank, false);
                     },
@@ -276,102 +242,11 @@ class _HomeState extends State<Home> {
       floatingActionButton: activeBank == null
           ? null
           : FloatingActionButton(
-              heroTag: "fab_home",
               backgroundColor: kPrimary,
               child: const Icon(Icons.add),
               onPressed: () => _ouvrirMenuAjout(context),
             ),
     );
-  }
-
-  /// Ouvre un sélecteur d'année puis de mois pour sauter directement au bon
-  /// mois du calendrier, sans avoir à cliquer sur les flèches page par page.
-  Future<void> _choisirMoisAnnee(BuildContext context, DateTime moisActuel) async {
-    const premiereAnnee = 2023;
-    const derniereAnnee = 2035;
-
-    final annee = await showModalBottomSheet<int>(
-      context: context,
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Choisir une année",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 2,
-                  children: [
-                    for (var a = premiereAnnee; a <= derniereAnnee; a++)
-                      _ChoixPuce(
-                        label: "$a",
-                        selectionne: a == moisActuel.year,
-                        onTap: () => Navigator.pop(ctx, a),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    if (!context.mounted) return;
-    if (annee == null) return;
-
-    const noms = [
-      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-    ];
-
-    final mois = await showModalBottomSheet<int>(
-      context: context,
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Choisir un mois ($annee)",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 2.2,
-                  children: [
-                    for (var m = 1; m <= 12; m++)
-                      _ChoixPuce(
-                        label: noms[m - 1],
-                        selectionne: m == moisActuel.month && annee == moisActuel.year,
-                        onTap: () => Navigator.pop(ctx, m),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-    if (!context.mounted) return;
-    if (mois == null) return;
-
-    setState(() {
-      _focusedDay = DateTime(annee, mois, 1);
-    });
   }
 
   Widget _aucunCompte(BuildContext context, Store s) {
@@ -482,7 +357,7 @@ class _HomeState extends State<Home> {
     final s = Store.I;
 
     final hasOperation =
-        activeBank != null && s.hasOperationOn(day);
+        activeBank != null && s.opsActives().any((o) => o.occursOn(day));
 
     final solde =
         (activeBank == null || !hasOperation) ? 0.0 : s.getSoldeAu(day, false);
@@ -626,45 +501,6 @@ class _HomeState extends State<Home> {
             child: const Text("Supprimer"),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Petit bouton rectangulaire sélectionnable, utilisé par le sélecteur
-/// année/mois du calendrier.
-class _ChoixPuce extends StatelessWidget {
-  final String label;
-  final bool selectionne;
-  final VoidCallback onTap;
-
-  const _ChoixPuce({
-    required this.label,
-    required this.selectionne,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: onTap,
-      child: Container(
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selectionne ? kPrimary : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selectionne ? kPrimary : Colors.grey.shade300,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selectionne ? Colors.white : Colors.black87,
-            fontWeight: selectionne ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
       ),
     );
   }

@@ -1,4 +1,4 @@
-enum ModePaiement { especes, cb, cheque, wero, paypal, autre, ticketRestaurant }
+enum ModePaiement { especes, cb, cheque, wero, paypal }
 
 extension ModePaiementX on ModePaiement {
   /// Préfixe utilisé dans le libellé (ex: "CB_26_07_2026_01")
@@ -14,10 +14,6 @@ extension ModePaiementX on ModePaiement {
         return "WERO";
       case ModePaiement.paypal:
         return "PAYPAL";
-      case ModePaiement.autre:
-        return "AUTRE";
-      case ModePaiement.ticketRestaurant:
-        return "TR";
     }
   }
 
@@ -33,10 +29,6 @@ extension ModePaiementX on ModePaiement {
         return "Wero";
       case ModePaiement.paypal:
         return "PayPal";
-      case ModePaiement.autre:
-        return "Autre";
-      case ModePaiement.ticketRestaurant:
-        return "Tickets restaurant";
     }
   }
 
@@ -52,10 +44,6 @@ extension ModePaiementX on ModePaiement {
         return ModePaiement.wero;
       case "PAYPAL":
         return ModePaiement.paypal;
-      case "AUTRE":
-        return ModePaiement.autre;
-      case "TR":
-        return ModePaiement.ticketRestaurant;
       default:
         return ModePaiement.especes;
     }
@@ -118,10 +106,7 @@ class VenteItem {
       nom: m["nom"] ?? "",
       prixUnitaire: (m["pu"] as num?)?.toDouble() ?? 0,
       quantite: quantite,
-      // clamp() plante si quantite est négatif (ex: un remboursement PayPal,
-      // où Zettle renvoie une quantité négative) — on protège ce cas au lieu
-      // de laisser toute l'appli planter au démarrage.
-      quantiteOfferte: quantite <= 0 ? 0 : quantiteOfferte.clamp(0, quantite),
+      quantiteOfferte: quantiteOfferte.clamp(0, quantite),
       categorie: m["cat"] ?? "",
     );
   }
@@ -149,11 +134,6 @@ class Vente {
   /// si le même rapport (ou une période qui se chevauche) est réimporté.
   String? refExterne;
 
-  /// Remise totale appliquée sur cette vente (ex: offre commerciale). Les
-  /// articles ([items]) gardent leur prix plein de carte ; [total] est ce
-  /// qui a réellement été payé (= somme des articles - [remise]).
-  double remise;
-
   Vente({
     required this.id,
     required this.date,
@@ -166,7 +146,6 @@ class Vente {
     this.operationId,
     this.source = "manuel",
     this.refExterne,
-    this.remise = 0,
   });
 
   Map<String, dynamic> toMap() => {
@@ -181,7 +160,6 @@ class Vente {
         "opid": operationId,
         "src": source,
         "ref": refExterne,
-        "rem": remise,
       };
 
   factory Vente.fromMap(Map<String, dynamic> m) => Vente(
@@ -205,6 +183,5 @@ class Vente {
         operationId: m["opid"],
         source: m["src"] ?? "manuel",
         refExterne: m["ref"],
-        remise: (m["rem"] as num?)?.toDouble() ?? 0,
       );
 }

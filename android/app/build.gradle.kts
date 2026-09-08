@@ -35,16 +35,6 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-
-    // Renomme le fichier .apk généré (dans build/app/outputs/flutter-apk/)
-    // en "gestion_compta.apk" au lieu du nom par défaut app-release.apk /
-    // app-debug.apk.
-    applicationVariants.all {
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName = "gestion compta.apk"
-        }
-    }
 }
 
 kotlin {

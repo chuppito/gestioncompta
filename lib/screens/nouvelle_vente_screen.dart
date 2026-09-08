@@ -72,8 +72,6 @@ class _NouvelleVenteScreenState extends State<NouvelleVenteScreen> {
   /// panier : id article -> ligne
   final Map<String, _LigneVente> _panier = {};
   String? _categorieFiltre;
-  final _rechercheCtrl = TextEditingController();
-  String _recherche = "";
 
   List<CartePizza> _pizzasCarte = [];
   bool _chargementCarte = true;
@@ -94,12 +92,6 @@ class _NouvelleVenteScreenState extends State<NouvelleVenteScreen> {
       }
     }
     _chargerCarte();
-  }
-
-  @override
-  void dispose() {
-    _rechercheCtrl.dispose();
-    super.dispose();
   }
 
   Future<void> _chargerCarte() async {
@@ -193,13 +185,9 @@ class _NouvelleVenteScreenState extends State<NouvelleVenteScreen> {
       categories.add(it.categorie);
     }
 
-    final itemsAffiches = ((_categorieFiltre == null || _categorieFiltre == "Tous")
-            ? tousLesItems
-            : tousLesItems.where((it) => it.categorie == _categorieFiltre).toList())
-        .where((it) =>
-            _recherche.isEmpty ||
-            it.nom.toLowerCase().contains(_recherche.toLowerCase()))
-        .toList();
+    final itemsAffiches = (_categorieFiltre == null || _categorieFiltre == "Tous")
+        ? tousLesItems
+        : tousLesItems.where((it) => it.categorie == _categorieFiltre).toList();
 
     final total = _panier.values.fold<double>(
       0,
@@ -212,11 +200,6 @@ class _NouvelleVenteScreenState extends State<NouvelleVenteScreen> {
         backgroundColor: kPrimary,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.price_change_outlined),
-            tooltip: "Montant libre",
-            onPressed: () => _ouvrirMontantLibre(context),
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: "Rafraîchir la carte",
@@ -245,33 +228,6 @@ class _NouvelleVenteScreenState extends State<NouvelleVenteScreen> {
               children: [
                 if (_chargementCarte)
                   const LinearProgressIndicator(minHeight: 2, color: kPrimary),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-                  child: TextField(
-                    controller: _rechercheCtrl,
-                    decoration: InputDecoration(
-                      hintText: "Rechercher un article...",
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _recherche.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.close),
-                              tooltip: "Effacer",
-                              onPressed: () {
-                                setState(() {
-                                  _rechercheCtrl.clear();
-                                  _recherche = "";
-                                });
-                              },
-                            ),
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onChanged: (v) => setState(() => _recherche = v),
-                  ),
-                ),
                 SizedBox(
                   height: 44,
                   child: ListView(
@@ -488,95 +444,6 @@ class _NouvelleVenteScreenState extends State<NouvelleVenteScreen> {
                 _barrePanier(context, s, cfg, total),
               ],
             ),
-    );
-  }
-
-  void _ouvrirMontantLibre(BuildContext context) {
-    final labelCtrl = TextEditingController();
-    final montantCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Montant libre",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Pour un article hors carte (ex: dépannage, produit ponctuel)",
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: labelCtrl,
-                  decoration: const InputDecoration(
-                    labelText: "Libellé (optionnel)",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: montantCtrl,
-                  autofocus: true,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: "Montant",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () {
-                      final montant = double.tryParse(
-                          montantCtrl.text.replaceAll(',', '.'));
-                      if (montant == null || montant <= 0) return;
-
-                      final label = labelCtrl.text.trim();
-                      final id = "libre_${DateTime.now().millisecondsSinceEpoch}";
-
-                      setState(() {
-                        _panier[id] = _LigneVente(
-                          item: _ItemAffichable(
-                            id: id,
-                            nom: label.isEmpty ? "Montant libre" : label,
-                            prix: montant,
-                            categorie: "Libre",
-                            estCarte: false,
-                          ),
-                          quantite: 1,
-                        );
-                      });
-                      Navigator.pop(ctx);
-                    },
-                    child: const Text("Ajouter au panier"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
