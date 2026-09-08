@@ -3,35 +3,110 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-    paths-ignore:
-      - '**.zip'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          distribution: 'temurin'
+          fetch-depth: 0
+
+      # --------------------------------------------------
+      # Recherche d'un ZIP ajouté à la racine du dépôt
+      # --------------------------------------------------
+      - name: Detect ZIP
+        id: zip
+        shell: bash
+        run: |
+          ZIP=$(find . -maxdepth 1 -type f -name "*.zip" -print -quit)
+
+          if [ -n "$ZIP" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "file=$ZIP" >> "$GITHUB_OUTPUT"
+            echo "ZIP détecté : $ZIP"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "Aucun ZIP détecté."
+          fi
+
+      # --------------------------------------------------
+      # Décompression
+      # --------------------------------------------------
+      - name: Extract ZIP
+        if: steps.zip.outputs.found == 'true'
+        shell: bash
+        run: |
+          ZIP="${{ steps.zip.outputs.file }}"
+
+          echo "Décompression de $ZIP..."
+
+          unzip -o "$ZIP" -d .
+
+          echo "Suppression du ZIP..."
+          rm -f "$ZIP"
+
+      # --------------------------------------------------
+      # Commit des fichiers extraits
+      # --------------------------------------------------
+      - name: Commit extracted files
+        if: steps.zip.outputs.found == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Aucune modification à enregistrer."
+          else
+            git commit -m "Auto extract ZIP"
+            git push
+          fi
+
+      # --------------------------------------------------
+      # Java
+      # --------------------------------------------------
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
+      # --------------------------------------------------
+      # Flutter
+      # --------------------------------------------------
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
 
+      # --------------------------------------------------
+      # Dépendances
+      # --------------------------------------------------
       - name: Install dependencies
         run: flutter pub get
 
+      # --------------------------------------------------
+      # Build APK
+      # --------------------------------------------------
       - name: Build release APK
         run: flutter build apk --release
 
+      # --------------------------------------------------
+      # Récupération de l'APK
+      # --------------------------------------------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: gestion_compta
+          name: gestioncompta-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
