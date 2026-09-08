@@ -69,7 +69,7 @@ class _VentesScreenState extends State<VentesScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.bar_chart),
+            icon: const Icon(Icons.local_pizza),
             tooltip: "Statistiques produits",
             onPressed: () {
               Navigator.push(
@@ -188,6 +188,7 @@ class _VentesScreenState extends State<VentesScreen> {
       floatingActionButton: s.active == null
           ? null
           : FloatingActionButton(
+              heroTag: "fab_ventes",
               backgroundColor: kPrimary,
               child: const Icon(Icons.add),
               onPressed: () {
@@ -214,6 +215,10 @@ class _VentesScreenState extends State<VentesScreen> {
         return Colors.purple;
       case ModePaiement.paypal:
         return const Color(0xFF003087); // bleu PayPal
+      case ModePaiement.autre:
+        return Colors.grey;
+      case ModePaiement.ticketRestaurant:
+        return Colors.deepOrange;
     }
   }
 }

@@ -75,6 +75,7 @@ class _ProduitsScreenState extends State<ProduitsScreen> {
               ],
             ),
       floatingActionButton: FloatingActionButton(
+        heroTag: "fab_produits",
         backgroundColor: kPrimary,
         onPressed: () => _ouvrirEditeur(context, s),
         child: const Icon(Icons.add),

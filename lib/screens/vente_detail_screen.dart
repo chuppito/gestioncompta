@@ -113,14 +113,42 @@ class VenteDetailScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: Colors.grey.shade300)),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("Total", style: TextStyle(fontSize: 18)),
-                  Text(
-                    "${vente.total.toStringAsFixed(2)} ${cfg.currency}",
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+                  if (vente.remise > 0) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Sous-total", style: TextStyle(color: Colors.grey)),
+                        Text(
+                          "${(vente.total + vente.remise).toStringAsFixed(2)} ${cfg.currency}",
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Remise", style: TextStyle(color: Colors.redAccent)),
+                        Text(
+                          "- ${vente.remise.toStringAsFixed(2)} ${cfg.currency}",
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                  ],
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Total", style: TextStyle(fontSize: 18)),
+                      Text(
+                        "${vente.total.toStringAsFixed(2)} ${cfg.currency}",
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+                      ),
+                    ],
                   ),
                 ],
               ),
