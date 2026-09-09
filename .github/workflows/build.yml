@@ -114,16 +114,28 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         shell: bash
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > upload-keystore.jks
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
 
           cat > android/key.properties <<EOF
           storePassword=$KEYSTORE_PASSWORD
           keyPassword=$KEY_PASSWORD
           keyAlias=$KEY_ALIAS
-          storeFile=../upload-keystore.jks
+          storeFile=upload-keystore.jks
           EOF
 
-          echo "Keystore installé."
+          echo "Keystore installé dans android/app/."
+
+          echo "Vérification du fichier keystore..."
+          ls -lh android/app/upload-keystore.jks
+
+          echo "Vérification du keystore..."
+          keytool -list \
+            -keystore android/app/upload-keystore.jks \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" \
+            >/dev/null
+
+          echo "Keystore valide."
 
       # --------------------------------------------------
       # Dépendances
@@ -154,5 +166,5 @@ jobs:
         if: always()
         shell: bash
         run: |
-          rm -f upload-keystore.jks
+          rm -f android/app/upload-keystore.jks
           rm -f android/key.properties
