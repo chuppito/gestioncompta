@@ -65,7 +65,7 @@ class _TransferScreenState extends State<TransferScreen> {
                   if (from == null || to == null || from == to) return;
                   if (amount.text.isEmpty) return;
 
-                  s.transfert(
+                  s.transfer(
                     from: from!,
                     to: to!,
                     montant: double.parse(amount.text.replaceAll(',', '.')),
