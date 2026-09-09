@@ -156,7 +156,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gestioncompta-apk
-          path: build/app/outputs/flutter-apk/gestion compta.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
       # --------------------------------------------------
