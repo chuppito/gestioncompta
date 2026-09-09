@@ -13,13 +13,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # --------------------------------------------------
+      # Checkout
+      # --------------------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       # --------------------------------------------------
-      # Recherche d'un ZIP à la racine
+      # Recherche d'un ZIP
       # --------------------------------------------------
       - name: Detect ZIP
         id: zip
@@ -38,7 +41,6 @@ jobs:
 
       # --------------------------------------------------
       # Décompression
-      # Le build.yml du ZIP est volontairement ignoré
       # --------------------------------------------------
       - name: Extract ZIP
         if: steps.zip.outputs.found == 'true'
@@ -65,7 +67,7 @@ jobs:
             -delete
 
       # --------------------------------------------------
-      # Commit et push des fichiers extraits
+      # Commit des fichiers extraits
       # --------------------------------------------------
       - name: Commit extracted files
         if: steps.zip.outputs.found == 'true'
@@ -102,13 +104,35 @@ jobs:
           cache: true
 
       # --------------------------------------------------
+      # Installation de la clé de signature
+      # --------------------------------------------------
+      - name: Setup signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        shell: bash
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > upload-keystore.jks
+
+          cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=../upload-keystore.jks
+          EOF
+
+          echo "Keystore installé."
+
+      # --------------------------------------------------
       # Dépendances
       # --------------------------------------------------
       - name: Install dependencies
         run: flutter pub get
 
       # --------------------------------------------------
-      # Build APK
+      # Build release signé
       # --------------------------------------------------
       - name: Build release APK
         run: flutter build apk --release
@@ -120,5 +144,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gestioncompta-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/gestion compta.apk
           retention-days: 30
+
+      # --------------------------------------------------
+      # Suppression de la clé
+      # --------------------------------------------------
+      - name: Cleanup signing files
+        if: always()
+        shell: bash
+        run: |
+          rm -f upload-keystore.jks
+          rm -f android/key.properties
