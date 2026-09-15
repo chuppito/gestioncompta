@@ -10,6 +10,7 @@ import '../models/operation.dart';
 import 'saisie_screen.dart';
 import 'recap_screen.dart';
 import 'stats_screen.dart';
+import 'paiements_recap_screen.dart';
 import 'nouvelle_vente_screen.dart';
 import 'vente_detail_screen.dart';
 
@@ -82,6 +83,16 @@ class _HomeState extends State<Home> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const StatsScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.credit_card),
+            tooltip: "Récapitulatif des paiements",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PaiementsRecapScreen()),
               );
             },
           ),
