@@ -262,6 +262,7 @@ class _RecapState extends State<Recap> {
                   totR - totD,
                   (totR - totD) >= 0 ? Colors.blue : Colors.orange,
                   cfg.currency,
+                  pourcentage: totR == 0 ? null : (totR - totD) / totR * 100,
                 ),
               ],
             ),
@@ -318,13 +319,18 @@ class _RecapState extends State<Recap> {
     );
   }
 
-  Widget _statCol(String t, double v, Color c, String cur) => Column(
+  Widget _statCol(String t, double v, Color c, String cur, {double? pourcentage}) => Column(
         children: [
           Text(t, style: const TextStyle(fontSize: 10)),
           Text(
             "${v.toStringAsFixed(2)} $cur",
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: c),
           ),
+          if (pourcentage != null)
+            Text(
+              "(${pourcentage >= 0 ? '+' : ''}${pourcentage.toStringAsFixed(1)}%)",
+              style: TextStyle(fontSize: 11, color: c),
+            ),
         ],
       );
 }
