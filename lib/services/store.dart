@@ -382,6 +382,41 @@ class Store extends ChangeNotifier {
     save(skipCloudDiff: true, ventesChanged: false);
   }
 
+  void transfer({
+    required String from,
+    required String to,
+    required double montant,
+    required String desc,
+    required DateTime date,
+  }) {
+    final baseId = DateTime.now().microsecondsSinceEpoch.toString();
+    final sortie = Operation(
+      id: '${baseId}_from',
+      desc: desc,
+      montant: montant,
+      depense: true,
+      date: date,
+      banque: from,
+      transfert: true,
+      banqueCible: to,
+    );
+    final entree = Operation(
+      id: '${baseId}_to',
+      desc: desc,
+      montant: montant,
+      depense: false,
+      date: date,
+      banque: to,
+      transfert: true,
+      banqueCible: from,
+    );
+
+    ops.addAll([sortie, entree]);
+    _syncUneOp(sortie);
+    _syncUneOp(entree);
+    save(skipCloudDiff: true, ventesChanged: false);
+  }
+
   /// Une opération déjà présente dans [ops] a été modifiée en place (ex:
   /// édition manuelle) — ne synchronise que celle-ci.
   void syncOperationModifiee(Operation o) {
