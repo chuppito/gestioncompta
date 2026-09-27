@@ -218,6 +218,15 @@ class _NouvelleVenteScreenState extends State<NouvelleVenteScreen> {
             onPressed: () => _ouvrirMontantLibre(context),
           ),
           IconButton(
+            icon: Badge(
+              label: Text("${_panier.values.fold<int>(0, (a, l) => a + l.quantite)}"),
+              isLabelVisible: _panier.isNotEmpty,
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
+            tooltip: "Voir le panier",
+            onPressed: _panier.isEmpty ? null : () => _ouvrirPanier(context, s, cfg),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: "Rafraîchir la carte",
             onPressed: _chargementCarte
@@ -488,6 +497,186 @@ class _NouvelleVenteScreenState extends State<NouvelleVenteScreen> {
                 _barrePanier(context, s, cfg, total),
               ],
             ),
+    );
+  }
+
+  void _ouvrirPanier(BuildContext context, Store s, AppConfig cfg) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final lignes = _panier.values.toList();
+            final total = _panier.values.fold<double>(
+              0,
+              (sum, l) => sum + l.item.prix * (l.quantite - l.quantiteOfferte),
+            );
+
+            void rafraichir(void Function() action) {
+              setState(action);
+              setSheetState(() {});
+            }
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.75,
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              expand: false,
+              builder: (ctx, scrollController) {
+                return SafeArea(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Panier",
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => Navigator.pop(ctx),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (lignes.isEmpty)
+                        const Expanded(
+                          child: Center(child: Text("Panier vide")),
+                        )
+                      else
+                        Expanded(
+                          child: ListView.separated(
+                            controller: scrollController,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: lignes.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              final ligne = lignes[index];
+                              final item = ligne.item;
+                              final qte = ligne.quantite;
+                              final qteOfferte = ligne.quantiteOfferte;
+                              final offert = qteOfferte > 0;
+                              final touteOfferte = qte > 0 && qteOfferte == qte;
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.nom,
+                                            style: const TextStyle(fontWeight: FontWeight.bold),
+                                          ),
+                                          Text(
+                                            touteOfferte
+                                                ? "0.00 ${cfg.currency}"
+                                                : "${item.prix.toStringAsFixed(2)} ${cfg.currency} / unité",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: offert ? Colors.orange : Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          if (offert)
+                                            Text(
+                                              touteOfferte
+                                                  ? (qte > 1 ? "Toutes offertes" : "Offerte")
+                                                  : "$qteOfferte offerte${qteOfferte > 1 ? 's' : ''} sur $qte",
+                                              style: const TextStyle(
+                                                color: Colors.orange,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      tooltip: touteOfferte
+                                          ? "Annuler les offres"
+                                          : (offert
+                                              ? "Offrir un exemplaire de plus"
+                                              : "Offrir un exemplaire"),
+                                      icon: Icon(
+                                        Icons.card_giftcard,
+                                        size: 20,
+                                        color: offert ? Colors.orange : Colors.grey.shade400,
+                                      ),
+                                      onPressed: () => rafraichir(() {
+                                        if (ligne.quantiteOfferte >= ligne.quantite) {
+                                          ligne.quantiteOfferte = 0;
+                                        } else {
+                                          ligne.quantiteOfferte += 1;
+                                        }
+                                      }),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                      onPressed: () => rafraichir(() => _decrementer(item, qte)),
+                                    ),
+                                    Text(
+                                      "$qte",
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.add_circle, color: kPrimary),
+                                      onPressed: () => rafraichir(() => _incrementer(item)),
+                                    ),
+                                    IconButton(
+                                      tooltip: "Retirer du panier",
+                                      icon: const Icon(Icons.delete_outline),
+                                      onPressed: () => rafraichir(() => _panier.remove(item.id)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                "Total : ${total.toStringAsFixed(2)} ${cfg.currency}",
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimary,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: lignes.isEmpty
+                                  ? null
+                                  : () {
+                                      Navigator.pop(ctx);
+                                      _ouvrirValidation(context, s);
+                                    },
+                              child: Text(_modeEdition ? "Enregistrer" : "Valider l'achat"),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 

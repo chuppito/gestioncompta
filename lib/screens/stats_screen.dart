@@ -27,6 +27,7 @@ class _StatsScreenState extends State<StatsScreen> {
   String? _categorieFiltre;
   _Periode _periode = _Periode.mois;
   DateTime _dateRef = DateTime.now();
+  bool _vueBoissons = false;
 
   /// [début inclus, fin exclue[ de la période sélectionnée.
   (DateTime, DateTime) _bornesPeriode() {
@@ -92,16 +93,24 @@ class _StatsScreenState extends State<StatsScreen> {
         .toList();
 
     // Regroupe toutes les lignes vendues par nom de produit. Les
-    // suppléments (chorizo, mozzarella...) ne sont pas des pizzas à part
-    // entière : on les exclut du classement — via la catégorie si elle est
-    // renseignée, sinon via le nom (utile pour les imports PayPal où la
-    // catégorie n'est pas toujours reconnue).
+    // suppléments (chorizo, mozzarella...) et les boissons ne sont pas des
+    // pizzas à part entière : on les exclut du classement "Pizzas" — via la
+    // catégorie si elle est renseignée, sinon via le nom (utile pour les
+    // imports PayPal où la catégorie n'est pas toujours reconnue). La vue
+    // "Boissons" fait l'inverse : ne garde que les boissons.
     final Map<String, _StatLigne> parNom = {};
     for (final v in ventesPeriode) {
       for (final item in v.items) {
         final categorieSuppl = item.categorie.toLowerCase().contains("suppl");
         final nomSuppl = item.nom.toLowerCase().contains("suppl");
-        if (categorieSuppl || nomSuppl) continue;
+        final estBoisson = item.categorie.toLowerCase().contains("boisson");
+
+        if (_vueBoissons) {
+          if (!estBoisson) continue;
+        } else {
+          if (categorieSuppl || nomSuppl || estBoisson) continue;
+        }
+
         final key = item.nom;
         final ligne = parNom.putIfAbsent(
             key, () => _StatLigne(item.nom, item.categorie.isEmpty ? "Non classé" : item.categorie));
@@ -126,7 +135,7 @@ class _StatsScreenState extends State<StatsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Statistiques produits"),
+        title: Text(_vueBoissons ? "Statistiques boissons" : "Statistiques produits"),
         backgroundColor: kPrimary,
         foregroundColor: Colors.white,
       ),
@@ -182,6 +191,20 @@ class _StatsScreenState extends State<StatsScreen> {
                   ],
                 ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text("Pizzas"), icon: Icon(Icons.local_pizza)),
+                ButtonSegment(value: true, label: Text("Boissons"), icon: Icon(Icons.local_bar)),
+              ],
+              selected: {_vueBoissons},
+              onSelectionChanged: (v) => setState(() {
+                _vueBoissons = v.first;
+                _categorieFiltre = null;
+              }),
             ),
           ),
           if (ventesPeriode.isEmpty)
