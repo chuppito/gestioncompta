@@ -22,6 +22,7 @@ class Store extends ChangeNotifier {
   List<Operation> ops = [];
   List<Produit> produits = [];
   List<Vente> ventes = [];
+  List<PanierEnAttente> paniersEnAttente = [];
   String? active;
 
   // ===================== SYNCHRONISATION CLOUD =====================
@@ -63,6 +64,14 @@ class Store extends ChangeNotifier {
             .toList()
         : [];
 
+    final rawAttentes = box.get("paniersEnAttente");
+    paniersEnAttente = (rawAttentes is List)
+        ? rawAttentes
+            .whereType<Map>()
+            .map((x) => PanierEnAttente.fromMap(Map<String, dynamic>.from(x)))
+            .toList()
+        : [];
+
     final rawVentes = box.get("ventes");
     ventes = (rawVentes is List)
         ? rawVentes
@@ -87,6 +96,7 @@ class Store extends ChangeNotifier {
         "banques": banques,
         "active": active,
         "produits": produits.map((x) => x.toMap()).toList(),
+        "paniersEnAttente": paniersEnAttente.map((x) => x.toMap()).toList(),
       };
 
   void _applyMeta(Map<String, dynamic> data) {
@@ -96,10 +106,15 @@ class Store extends ChangeNotifier {
         .whereType<Map>()
         .map((x) => Produit.fromMap(Map<String, dynamic>.from(x)))
         .toList();
+    paniersEnAttente = (data["paniersEnAttente"] as List? ?? [])
+        .whereType<Map>()
+        .map((x) => PanierEnAttente.fromMap(Map<String, dynamic>.from(x)))
+        .toList();
 
     box.put("banques", banques);
     box.put("active", active);
     box.put("produits", produits.map((x) => x.toMap()).toList());
+    box.put("paniersEnAttente", paniersEnAttente.map((x) => x.toMap()).toList());
 
     notifyListeners();
   }
@@ -285,6 +300,7 @@ class Store extends ChangeNotifier {
     box.put("banques", banques);
     box.put("active", active);
     box.put("produits", produits.map((x) => x.toMap()).toList());
+    box.put("paniersEnAttente", paniersEnAttente.map((x) => x.toMap()).toList());
     if (opsChanged) {
       box.put("ops", ops.map((x) => x.toMap()).toList());
       _opsVersion++;
@@ -636,6 +652,26 @@ class Store extends ChangeNotifier {
     save(skipCloudDiff: true, ventesChanged: false, opsChanged: false);
   }
 
+  // ===================== PANIERS EN ATTENTE =====================
+
+  void sauvegarderPanierEnAttente(List<VenteItem> items) {
+    if (items.isEmpty) return;
+    paniersEnAttente.insert(
+      0,
+      PanierEnAttente(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        date: DateTime.now(),
+        items: items,
+      ),
+    );
+    save(skipCloudDiff: true, ventesChanged: false, opsChanged: false);
+  }
+
+  void supprimerPanierEnAttente(String id) {
+    paniersEnAttente.removeWhere((p) => p.id == id);
+    save(skipCloudDiff: true, ventesChanged: false, opsChanged: false);
+  }
+
   // ===================== VENTES =====================
 
   List<Vente> ventesActives() {
@@ -652,6 +688,7 @@ class Store extends ChangeNotifier {
     required DateTime date,
     required ModePaiement mode,
     required List<VenteItem> items,
+    List<Reglement>? reglements,
   }) {
     final jour = DateTime(date.year, date.month, date.day);
 
@@ -687,6 +724,7 @@ class Store extends ChangeNotifier {
       total: total,
       banque: active!,
       operationId: id,
+      reglements: reglements,
     );
 
     ops.add(operation);
@@ -715,6 +753,7 @@ class Store extends ChangeNotifier {
     required DateTime date,
     required ModePaiement mode,
     required List<VenteItem> items,
+    List<Reglement>? reglements,
   }) {
     final jour = DateTime(date.year, date.month, date.day);
     final total = items.fold<double>(0, (s, i) => s + i.sousTotal);
@@ -737,6 +776,7 @@ class Store extends ChangeNotifier {
     vente.mode = mode;
     vente.items = items;
     vente.total = total;
+    vente.reglements = reglements ?? [Reglement(mode: mode, montant: total)];
 
     if (vente.operationId != null) {
       final idx = ops.indexWhere((o) => o.id == vente.operationId);
