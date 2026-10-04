@@ -219,6 +219,8 @@ class _VentesScreenState extends State<VentesScreen> {
         return Colors.grey;
       case ModePaiement.ticketRestaurant:
         return Colors.deepOrange;
+      case ModePaiement.mixte:
+        return Colors.teal;
     }
   }
 }
