@@ -92,8 +92,13 @@ class _PaiementsRecapScreenState extends State<PaiementsRecapScreen> {
     };
 
     for (final v in ventesPeriode) {
-      totauxParMode[v.mode] = (totauxParMode[v.mode] ?? 0) + v.total;
-      nbParMode[v.mode] = (nbParMode[v.mode] ?? 0) + 1;
+      // Une vente mixte est ventilée selon ses règlements réels.
+      // Les anciennes ventes utilisent le règlement de compatibilité
+      // créé automatiquement par Vente.
+      for (final r in v.reglements) {
+        totauxParMode[r.mode] = (totauxParMode[r.mode] ?? 0) + r.montant;
+        nbParMode[r.mode] = (nbParMode[r.mode] ?? 0) + 1;
+      }
     }
 
     final totalGeneral = totauxParMode.values.fold<double>(0, (s, v) => s + v);
@@ -233,6 +238,8 @@ class _PaiementsRecapScreenState extends State<PaiementsRecapScreen> {
         return Colors.grey;
       case ModePaiement.ticketRestaurant:
         return Colors.deepOrange;
+      case ModePaiement.mixte:
+        return Colors.teal;
     }
   }
 
@@ -252,6 +259,8 @@ class _PaiementsRecapScreenState extends State<PaiementsRecapScreen> {
         return Icons.more_horiz;
       case ModePaiement.ticketRestaurant:
         return Icons.restaurant;
+      case ModePaiement.mixte:
+        return Icons.call_split;
     }
   }
 }
