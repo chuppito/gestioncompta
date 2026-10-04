@@ -1,4 +1,4 @@
-enum ModePaiement { especes, cb, cheque, wero, paypal, autre, ticketRestaurant }
+enum ModePaiement { especes, cb, cheque, wero, paypal, autre, ticketRestaurant, mixte }
 
 extension ModePaiementX on ModePaiement {
   /// Préfixe utilisé dans le libellé (ex: "CB_26_07_2026_01")
@@ -18,6 +18,8 @@ extension ModePaiementX on ModePaiement {
         return "AUTRE";
       case ModePaiement.ticketRestaurant:
         return "TR";
+      case ModePaiement.mixte:
+        return "MIXTE";
     }
   }
 
@@ -37,6 +39,8 @@ extension ModePaiementX on ModePaiement {
         return "Autre";
       case ModePaiement.ticketRestaurant:
         return "Tickets restaurant";
+      case ModePaiement.mixte:
+        return "Paiement mixte";
     }
   }
 
@@ -56,10 +60,65 @@ extension ModePaiementX on ModePaiement {
         return ModePaiement.autre;
       case "TR":
         return ModePaiement.ticketRestaurant;
+      case "MIXTE":
+        return ModePaiement.mixte;
       default:
         return ModePaiement.especes;
     }
   }
+}
+
+class Reglement {
+  ModePaiement mode;
+  double montant;
+
+  Reglement({required this.mode, required this.montant});
+
+  Map<String, dynamic> toMap() => {
+        "mode": mode.index,
+        "montant": montant,
+      };
+
+  factory Reglement.fromMap(Map<String, dynamic> m) {
+    final index = (m["mode"] as num?)?.toInt() ?? 0;
+    return Reglement(
+      mode: index >= 0 && index < ModePaiement.values.length
+          ? ModePaiement.values[index]
+          : ModePaiement.especes,
+      montant: (m["montant"] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+class PanierEnAttente {
+  String id;
+  DateTime date;
+  List<VenteItem> items;
+
+  PanierEnAttente({
+    required this.id,
+    required this.date,
+    required this.items,
+  });
+
+  double get total => items.fold<double>(0, (s, i) => s + i.sousTotal);
+
+  Map<String, dynamic> toMap() => {
+        "id": id,
+        "dt": date.toIso8601String(),
+        "items": items.map((e) => e.toMap()).toList(),
+      };
+
+  factory PanierEnAttente.fromMap(Map<String, dynamic> m) => PanierEnAttente(
+        id: m["id"] ?? "",
+        date: DateTime.tryParse(m["dt"] ?? "") ?? DateTime.now(),
+        items: (m["items"] is List)
+            ? (m["items"] as List)
+                .whereType<Map>()
+                .map((x) => VenteItem.fromMap(Map<String, dynamic>.from(x)))
+                .toList()
+            : [],
+      );
 }
 
 class VenteItem {
@@ -153,6 +212,7 @@ class Vente {
   /// articles ([items]) gardent leur prix plein de carte ; [total] est ce
   /// qui a réellement été payé (= somme des articles - [remise]).
   double remise;
+  List<Reglement> reglements;
 
   Vente({
     required this.id,
@@ -167,7 +227,8 @@ class Vente {
     this.source = "manuel",
     this.refExterne,
     this.remise = 0,
-  });
+    List<Reglement>? reglements,
+  }) : reglements = reglements ?? [Reglement(mode: mode, montant: total)];
 
   Map<String, dynamic> toMap() => {
         "id": id,
@@ -182,6 +243,7 @@ class Vente {
         "src": source,
         "ref": refExterne,
         "rem": remise,
+        "reglements": reglements.map((e) => e.toMap()).toList(),
       };
 
   factory Vente.fromMap(Map<String, dynamic> m) => Vente(
@@ -206,5 +268,11 @@ class Vente {
         source: m["src"] ?? "manuel",
         refExterne: m["ref"],
         remise: (m["rem"] as num?)?.toDouble() ?? 0,
+        reglements: (m["reglements"] is List && (m["reglements"] as List).isNotEmpty)
+            ? (m["reglements"] as List)
+                .whereType<Map>()
+                .map((x) => Reglement.fromMap(Map<String, dynamic>.from(x)))
+                .toList()
+            : null,
       );
 }
