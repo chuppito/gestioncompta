@@ -60,7 +60,16 @@ class VenteDetailScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 4),
-                Text("Mode de paiement : ${vente.mode.label}"),
+                if (vente.reglements.length <= 1)
+                  Text("Mode de paiement : ${vente.mode.label}")
+                else ...[
+                  const Text("Règlements :", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  ...vente.reglements.map((r) => Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text("• ${r.mode.label} : ${r.montant.toStringAsFixed(2)} ${cfg.currency}"),
+                      )),
+                ],
               ],
             ),
           ),
