@@ -72,44 +72,51 @@ class Operation {
     }
   }
 
-  /// Pointe automatiquement toutes les occurrences passées jusqu'à [until]
+  /// Re-pointe le passé sans modifier les dépointages futurs.
   void autoPointPast(DateTime until) {
     final limit = DateTime(until.year, until.month, until.day);
+    pointages.removeWhere((key) {
+      final day = DateTime.tryParse(key);
+      return day != null && !day.isAfter(limit) && occursOn(day);
+    });
+  }
 
+  /// Parcourt les dates du calendrier en conservant le jour de départ.
+  /// Une échéance le 31 reste absente des mois sans 31, comme occursOn.
+  Iterable<DateTime> occurrencesUntil(DateTime until) sync* {
+    final limit = DateTime(until.year, until.month, until.day);
+    final end = finRecurrence;
+    final last = end != null && end.isBefore(limit)
+        ? DateTime(end.year, end.month, end.day)
+        : limit;
     if (f == Frequence.ponctuel) {
-      if (!dateJour.isAfter(limit)) {
-        final k = _key(dateJour);
-        if (!pointages.contains(k)) pointages.add(k);
+      if (!dateJour.isAfter(last) && occursOn(dateJour)) yield dateJour;
+      return;
+    }
+    if (f == Frequence.jour || f == Frequence.semaine) {
+      final step = f == Frequence.jour ? 1 : 7;
+      for (
+        var day = dateJour;
+        !day.isAfter(last);
+        day = DateTime(day.year, day.month, day.day + step)
+      ) {
+        if (occursOn(day)) yield day;
       }
       return;
     }
-
-    DateTime d = dateJour;
-    while (!d.isAfter(limit)) {
-      if (occursOn(d)) {
-        final k = _key(d);
-        if (!pointages.contains(k)) pointages.add(k);
+    final step = switch (f) {
+      Frequence.trimestre => 3,
+      Frequence.semestre => 6,
+      Frequence.an => 12,
+      _ => 1,
+    };
+    for (var offset = 0; ; offset += step) {
+      final month = DateTime(date.year, date.month + offset);
+      if (month.isAfter(last)) break;
+      final day = DateTime(month.year, month.month, date.day);
+      if (day.month == month.month && !day.isAfter(last) && occursOn(day)) {
+        yield day;
       }
-      d = _nextOccurrence(d);
-    }
-  }
-
-  DateTime _nextOccurrence(DateTime d) {
-    switch (f) {
-      case Frequence.ponctuel:
-        return d.add(const Duration(days: 1));
-      case Frequence.jour:
-        return d.add(const Duration(days: 1));
-      case Frequence.semaine:
-        return d.add(const Duration(days: 7));
-      case Frequence.mois:
-        return DateTime(d.year, d.month + 1, d.day);
-      case Frequence.trimestre:
-        return DateTime(d.year, d.month + 3, d.day);
-      case Frequence.semestre:
-        return DateTime(d.year, d.month + 6, d.day);
-      case Frequence.an:
-        return DateTime(d.year + 1, d.month, d.day);
     }
   }
 
@@ -185,3 +192,4 @@ class Operation {
     }
   }
 }
+
