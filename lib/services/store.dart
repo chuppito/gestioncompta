@@ -544,31 +544,11 @@ class Store extends ChangeNotifier {
       total += seulementPointe ? _prefixePointes![idx] : _prefixeTous![idx];
     }
 
-    // Opérations récurrentes : peu nombreuses, calcul inchangé au cas par cas.
     for (final o in _recurrents!) {
-      switch (o.f) {
-        case Frequence.jour:
-          DateTime d = o.dateJour;
-          while (!d.isAfter(jour)) {
-            if (o.occursOn(d)) {
-              if (!seulementPointe || o.isPointed(d)) {
-                total += o.depense ? -o.montant : o.montant;
-              }
-            }
-            d = d.add(const Duration(days: 1));
-          }
-          break;
-
-        default:
-          DateTime d = o.dateJour;
-          while (!d.isAfter(jour)) {
-            if (o.occursOn(d)) {
-              if (!seulementPointe || o.isPointed(d)) {
-                total += o.depense ? -o.montant : o.montant;
-              }
-            }
-            d = DateTime(d.year, d.month + 1, d.day);
-          }
+      for (final day in o.occurrencesUntil(jour)) {
+        if (!seulementPointe || o.isPointed(day)) {
+          total += o.depense ? -o.montant : o.montant;
+        }
       }
     }
 
@@ -581,15 +561,16 @@ class Store extends ChangeNotifier {
     save(skipCloudDiff: true, ventesChanged: false);
   }
 
-  /// Pointer le passé : re-pointe tout (vide les dépointages). Peut
+  /// Pointer le passé : retire les dépointages passés uniquement. Peut
   /// concerner plusieurs milliers d'opérations (toutes celles importées de
   /// PayPal comprises) : on envoie ça par lot plutôt qu'un appel réseau par
   /// opération.
   void autoPointAllPast() {
     final touchees = <Operation>[];
     for (final o in opsActives()) {
-      if (o.pointages.isNotEmpty) {
-        o.pointages.clear();
+      final previousCount = o.pointages.length;
+      o.autoPointPast(DateTime.now());
+      if (o.pointages.length != previousCount) {
         touchees.add(o);
       }
     }
