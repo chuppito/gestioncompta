@@ -153,14 +153,27 @@ jobs:
         run: flutter build apk --release
 
       # --------------------------------------------------
-      # Upload APK
+      # Publication de l'APK dans les Releases (hors quota des artefacts)
       # --------------------------------------------------
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: gestioncompta-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+      - name: Publish APK release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK"
+          cp "$APK" gestioncompta.apk
+          TAG="apk-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          gh release create "$TAG" gestioncompta.apk \\
+            --target "$(git rev-parse HEAD)" \\
+            --title "GestionCompta - APK #${GITHUB_RUN_NUMBER}" \\
+            --notes "APK Android signé, compilé et vérifié automatiquement." \\
+            --latest
+          RELEASE_URL="$(gh release view "$TAG" --json url --jq '.url')"
+          printf '### APK disponible\\n\\n[Télécharger gestioncompta.apk](%s)\\n' \\
+            "$RELEASE_URL" >> "$GITHUB_STEP_SUMMARY"
 
       # --------------------------------------------------
       # Suppression de la clé
