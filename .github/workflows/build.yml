@@ -166,13 +166,13 @@ jobs:
           test -s "$APK"
           cp "$APK" gestioncompta.apk
           TAG="apk-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          gh release create "$TAG" gestioncompta.apk \\
-            --target "$(git rev-parse HEAD)" \\
-            --title "GestionCompta - APK #${GITHUB_RUN_NUMBER}" \\
-            --notes "APK Android signé, compilé et vérifié automatiquement." \\
+          gh release create "$TAG" gestioncompta.apk \
+            --target "$(git rev-parse HEAD)" \
+            --title "GestionCompta - APK #${GITHUB_RUN_NUMBER}" \
+            --notes "APK Android signé, compilé et vérifié automatiquement." \
             --latest
           RELEASE_URL="$(gh release view "$TAG" --json url --jq '.url')"
-          printf '### APK disponible\\n\\n[Télécharger gestioncompta.apk](%s)\\n' \\
+          printf '### APK disponible\n\n[Télécharger gestioncompta.apk](%s)\n' \
             "$RELEASE_URL" >> "$GITHUB_STEP_SUMMARY"
 
       # --------------------------------------------------
