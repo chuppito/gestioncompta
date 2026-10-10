@@ -4,15 +4,7 @@ import '../theme.dart';
 
 import '../services/store.dart';
 import '../services/app_config.dart';
-
-class _StatLigne {
-  String nom;
-  String categorie;
-  int quantite = 0;
-  double chiffreAffaires = 0;
-
-  _StatLigne(this.nom, this.categorie);
-}
+import '../services/product_stats.dart';
 
 enum _Periode { jour, semaine, mois, annee }
 
@@ -92,39 +84,18 @@ class _StatsScreenState extends State<StatsScreen> {
         .where((v) => !v.date.isBefore(debut) && v.date.isBefore(fin))
         .toList();
 
-    // Regroupe toutes les lignes vendues par nom de produit. Les
-    // suppléments (chorizo, mozzarella...) et les boissons ne sont pas des
-    // pizzas à part entière : on les exclut du classement "Pizzas" — via la
-    // catégorie si elle est renseignée, sinon via le nom (utile pour les
-    // imports PayPal où la catégorie n'est pas toujours reconnue). La vue
-    // "Boissons" fait l'inverse : ne garde que les boissons.
-    final Map<String, _StatLigne> parNom = {};
-    for (final v in ventesPeriode) {
-      for (final item in v.items) {
-        final categorieSuppl = item.categorie.toLowerCase().contains("suppl");
-        final nomSuppl = item.nom.toLowerCase().contains("suppl");
-        final estBoisson = item.categorie.toLowerCase().contains("boisson");
-
-        if (_vueBoissons) {
-          if (!estBoisson) continue;
-        } else {
-          if (categorieSuppl || nomSuppl || estBoisson) continue;
-        }
-
-        final key = item.nom;
-        final ligne = parNom.putIfAbsent(
-            key, () => _StatLigne(item.nom, item.categorie.isEmpty ? "Non classé" : item.categorie));
-        ligne.quantite += item.quantite;
-        ligne.chiffreAffaires += item.sousTotal;
-      }
-    }
+    final statistiques = statistiquesProduits(
+      ventesPeriode,
+      boissons: _vueBoissons,
+      produits: s.produits,
+    );
 
     final categories = <String>{"Toutes"};
-    for (final l in parNom.values) {
+    for (final l in statistiques) {
       categories.add(l.categorie);
     }
 
-    var lignes = parNom.values.toList();
+    var lignes = statistiques;
     if (_categorieFiltre != null && _categorieFiltre != "Toutes") {
       lignes = lignes.where((l) => l.categorie == _categorieFiltre).toList();
     }

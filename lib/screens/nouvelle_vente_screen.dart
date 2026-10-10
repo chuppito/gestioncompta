@@ -32,7 +32,9 @@ class _ItemAffichable {
         id: vi.produitId,
         nom: vi.nom,
         prix: vi.prixUnitaire,
-        categorie: vi.produitId.startsWith('carte_') ? 'Pizza' : 'Produit',
+        categorie: vi.categorie.isNotEmpty
+            ? vi.categorie
+            : (vi.produitId.startsWith('carte_') ? 'Pizza' : 'Produit'),
         estCarte: vi.produitId.startsWith('carte_'),
       );
 }

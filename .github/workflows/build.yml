@@ -143,6 +143,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Verify product statistics
+        run: dart tool/check_product_stats.dart
+
       # --------------------------------------------------
       # Build release signé
       # --------------------------------------------------

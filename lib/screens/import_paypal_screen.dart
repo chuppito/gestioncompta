@@ -9,6 +9,7 @@ import '../models/produit.dart';
 import '../models/vente.dart';
 import '../services/store.dart';
 import '../services/app_config.dart';
+import '../services/product_stats.dart';
 
 /// Enlève les accents et met en minuscules, pour comparer des noms de
 /// produits de façon tolérante ("Supplément" vs "supplement").
@@ -142,7 +143,10 @@ class _ImportPaypalScreenState extends State<ImportPaypalScreen> {
         nom: nomComplet,
         prixUnitaire: quantite == 0 ? 0 : prixFinal / quantite,
         quantite: quantite,
-        categorie: produit?.categorie ?? "",
+        categorie: categoriePourStatistiques(
+          nom: nomComplet,
+          categorie: produit?.categorie ?? "",
+        ),
       );
 
       groupes.putIfAbsent(ref, () => []).add(item);
